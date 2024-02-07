@@ -1,0 +1,63 @@
+service: serverless-crawl-embed
+
+frameworkVersion: '3'
+
+useDotenv: true
+
+provider:
+  name: aws
+  runtime: python3.9
+  stage: ${opt:stage, 'dev'}
+  environment:
+    BASE_URL: ${env:BASE_URL}
+    CRAWL_QUEUE_URL: ${construct:CrawlQueue.queueUrl}
+    CRAWL_TABLE_NAME: ${construct:CrawlTable.tableName}
+    EMBEDDINGS_QUEUE_URL: ${construct:EmbeddingsQueue.queueUrl}
+    SOURCES_BUCKET_NAME: ${construct:SourcesBucket.bucketName}
+    PINECONE_API_KEY: ${env:PINECONE_API_KEY}
+    PINECONE_INDEX_NAME: ${env:PINECONE_INDEX_NAME}
+    OPENAI_API_KEY: ${env:OPENAI_API_KEY}
+    EMBEDDING_MODEL: ${env:EMBEDDING_MODEL}
+    
+
+constructs:
+  CrawlQueue:
+    type: queue
+    worker:
+      handler: src/handlers/crawl.run
+      timeout: 30
+      maxConcurrency: 10
+  CrawlTable:
+    type: database/dynamodb-single-table
+  SourcesBucket:
+    type: storage
+  EmbeddingsQueue:
+      type: queue
+      worker:
+        handler: src/handlers/generate_embeddings.run
+        timeout: 30
+        maxConcurrency: 10 # keep db connections low  
+  
+functions:
+  start:
+    handler: src/handlers/start.run
+  enqueue:
+    handler: src/handlers/enqueue.run
+    events:
+      - s3:
+          bucket: ${construct:SourcesBucket.bucketName}
+          event: s3:ObjectCreated:*
+          rules:
+            - prefix: raw/
+            - suffix: .html
+          existing: true
+  testEmbeddings:
+    handler: src/handlers/test_embeddings.run
+
+plugins:
+  - serverless-python-requirements
+  - serverless-lift
+
+custom:
+  pythonRequirements:
+    dockerizePip: true
