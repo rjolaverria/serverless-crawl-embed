@@ -12,11 +12,43 @@ authorAvatar: 'https://avatars1.githubusercontent.com/u/13742415?s=200&v=4'
 -->
 
 
-# Serverless Framework AWS Python Example
+# Serverless Crawl & Embed - Serverless Framework AWS
 
-This template demonstrates how to deploy a Python function running on AWS Lambda using the traditional Serverless Framework. The deployed function does not include any event definitions as well as any kind of persistence (database). For more advanced configurations check out the [examples repo](https://github.com/serverless/examples/) which includes integrations with SQS, DynamoDB or examples of functions that are triggered in `cron`-like manner. For details about configuration of specific `events`, please refer to our [documentation](https://www.serverless.com/framework/docs/providers/aws/events/).
+This was generated using the Serverless Framework AWS Python template. 
+
+This is an example of a way to crawl, generate and store embeddings static websites in using an S3 bucket, Lambdas, SQS, DynamoDB, Pinecone(Serverless) and OpenAI(text-embedding-ada-002).
+
+## Plugins
+- serverless-python-requirements
+- serverless-lift
+
+## Architecture
+![diagram](./images/serverless-embed-crawl.png)
+
+## Requirements
+- Docker
+- NPM
 
 ## Usage
+
+Install the Serverless Framework:
+
+```bash
+npm install -g serverless
+```
+
+Install the dependencies:
+
+```bash
+npm install
+```
+
+Add your environment variables to a `.env` file in the root of the project. 
+
+```bash
+cp .env.local .env.dev
+cp .env.local .env
+```
 
 ### Deployment
 
@@ -29,45 +61,52 @@ $ serverless deploy
 After running deploy, you should see output similar to:
 
 ```bash
-Deploying aws-python-project to stage dev (us-east-1)
+Deploying serverless-crawl-embed to stage dev (us-east-1)
 
-✔ Service deployed to stack aws-python-project-dev (112s)
+✔ Service deployed to stack serverless-crawl-embed-dev (68s)
 
 functions:
-  hello: aws-python-project-dev-hello (1.5 kB)
+  start: serverless-crawl-embed-dev-start (23 MB)
+  enqueue: serverless-crawl-embed-dev-enqueue (23 MB)
+  testEmbeddings: serverless-crawl-embed-dev-testEmbeddings (23 MB)
+  CrawlQueueWorker: serverless-crawl-embed-dev-CrawlQueueWorker (23 MB)
+  EmbeddingsQueueWorker: serverless-crawl-embed-dev-EmbeddingsQueueWorker (23 MB)
+CrawlQueue: https://sqs.us-east-1.amazonaws.com/....
+CrawlTable: serverless-crawl-embed-dev-CrawlTable...
+SourcesBucket: serverless-crawl-embed-dev-sourcesbucket...
+EmbeddingsQueue: https://sqs.us-east-1.amazonaws.com/...
 ```
 
 ### Invocation
 
-After successful deployment, you can invoke the deployed function by using the following command:
+After successful deployment, you can invoke the deployed `start` function to crawl a site by using the following command:
 
 ```bash
-serverless invoke --function hello
+sls invoke -f start --data "https://nextjs.org"  
+```
+
+Then you can test by invoking the  `test_embedding` function:
+
+```bash
+sls invoke -f testEmbeddings --data "what is nextjs?"  
 ```
 
 Which should result in response similar to the following:
 
 ```json
 {
-    "statusCode": 200,
-    "body": "{\"message\": \"Go Serverless v3.0! Your function executed successfully!\", \"input\": {}}"
-}
-```
-
-### Local development
-
-You can invoke your function locally by using the following command:
-
-```bash
-serverless invoke local --function hello
-```
-
-Which should result in response similar to the following:
-
-```
-{
-    "statusCode": 200,
-    "body": "{\"message\": \"Go Serverless v3.0! Your function executed successfully!\", \"input\": {}}"
+    "matches": [
+        {
+            "id": "raw/nextjs.org/index.html#chunk0",
+            "score": 0.874210715,
+            "values": [],
+            "metadata": {
+                "chunk_index": 0,
+                "s3_key": "raw/nextjs.org/index.html",
+                "source_url": "https://nextjs.org/",
+                "text": "Used by some of the world's largest companies, Next.js enables you to create high-quality web applications with the power of React components. Everything you need to build great products on the web. Deploy Next.js to Vercel. Vercel is a frontend cloud from the creators of Next.js, making it easy to get started with Next.js quickly. Jumpstart your Next.js development with pre-built solutions from Vercel and our community. Next.js Boilerplate. A Next.js app and a Serverless Function API. Image Gallery Starter. An image gallery built on Next.js and Cloudinary. Next.js Commerce. An all-in-one starter kit for high-performance ecommerce sites. For performance, efficiency and developer experience. Next.js is trusted by some of the biggest names on the web. Stay updated on new releases and features, guides, and case studies. © 2024 Vercel, Inc."
+            }
+        }
 }
 ```
 
