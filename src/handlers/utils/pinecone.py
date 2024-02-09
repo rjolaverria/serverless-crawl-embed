@@ -30,18 +30,16 @@ class PineconeClient:
 
     def store_embeddings(
         self,
-        chunks: list[str],
         vectors: list[list[float]],
+        s3_keys: list[str],
         source: str = "",
-        s3_key: str = "",
     ):
         """Store the embedding"""
-        ids = [f"{s3_key}#chunk{i}" for i in range(len(chunks))]
         meta = [
-            {"source_url": source, "text": chunk, "chunk_index": i, "s3_key": s3_key}
-            for i, chunk in enumerate(chunks)
+            {"source_url": source, "chunk_index": i, "s3_key": key}
+            for i, key in enumerate(s3_keys)
         ]
-        vectors = list(zip(ids, vectors, meta))
+        vectors = list(zip(s3_keys, vectors, meta))
         try:
             self.index.upsert(vectors=vectors)
         except Exception as e:

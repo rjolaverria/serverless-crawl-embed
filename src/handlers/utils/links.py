@@ -1,22 +1,21 @@
+from datetime import datetime
 import logging
-import os
 import re
 import requests
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup
+
+from .sqs import CrawlQueue
 from .dynamo import CrawlTable
-from boto3 import client
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 HTTP_URL_PATTERN = r"^http[s]*://.+"
-SQS_QUEUE_URL = os.environ.get("CRAWL_QUEUE_URL")
-
-sqs = client("sqs")
 
 
-def mark_as_seen(domain: str, link: str) -> bool:
+def mark_as_seen(domain: str, link: str, job_time_iso: str) -> bool:
+    logger.info(job_time_iso)
     crawlTable = CrawlTable()
     try:
         item = crawlTable.get_link(
@@ -24,7 +23,12 @@ def mark_as_seen(domain: str, link: str) -> bool:
             link=link,
         )
         if item:
-            logger.info("Link was already seen: " + link)
+            current_job_time = datetime.fromisoformat(job_time_iso)
+            last_updated_time = datetime.fromisoformat(item["updated_at"])
+            if current_job_time > last_updated_time:
+                crawlTable.update_link(domain=domain, link=link)
+                return True
+            logger.info("Link was already seen for the current job run: " + link)
         else:
             crawlTable.put_link(domain=domain, link=link)
             logger.info("Link marked as seen: " + link)
@@ -35,11 +39,12 @@ def mark_as_seen(domain: str, link: str) -> bool:
     return False
 
 
-def mark_and_enqueue_links(domain: str, links: list[str]):
+def mark_and_enqueue_links(domain: str, links: list[str], job_time_iso: str):
     for link in links:
         try:
-            if mark_as_seen(domain, link):
-                sqs.send_message(QueueUrl=SQS_QUEUE_URL, MessageBody=link)
+            queue = CrawlQueue()
+            if mark_as_seen(domain, link, job_time_iso):
+                queue.send_message(message={"url": link, "job_time": job_time_iso})
         except Exception as e:
             raise Exception(e)
 

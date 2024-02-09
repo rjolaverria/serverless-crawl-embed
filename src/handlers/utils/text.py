@@ -22,7 +22,7 @@ def split_into_chunks(text: str, max_tokens=MAX_TOKENS):
     """Splits text into chunks of a maximum number of tokens"""
     sentences = text.split(". ")
 
-    chunks = []
+    chunks: list[str] = []
     current = []
     current_tokens = 0
     # iterate through the sentences and add them to the chunk
@@ -31,21 +31,21 @@ def split_into_chunks(text: str, max_tokens=MAX_TOKENS):
 
         # if the chunk is too big, add it to the chunks list
         if current_tokens + tokens > max_tokens:
-            chunks.append(". ".join(current) + ".")
+            chunks.append(". ".join(current))
             current_tokens = 0
             current = []
 
         if tokens <= max_tokens:
-            current.append(sentence.rstrip("."))
+            current.append(sentence)
             current_tokens += tokens + 1  # add 1 for the period
 
     if len(current) > 0:
-        chunks.append(". ".join(current) + ".")
+        chunks.append(". ".join(current))
 
     return chunks
 
 
-def get_text_from_page(body: str):
+def get_text_from_html(body: str):
     """Extracts text from HTML page"""
     try:
         soup = BeautifulSoup(body, "html.parser")

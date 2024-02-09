@@ -18,6 +18,8 @@ provider:
     PINECONE_INDEX_NAME: ${env:PINECONE_INDEX_NAME}
     OPENAI_API_KEY: ${env:OPENAI_API_KEY}
     EMBEDDING_MODEL: ${env:EMBEDDING_MODEL}
+    RAW_BUCKET_DIRECTORY: ${env:RAW_BUCKET_DIRECTORY}
+    PROCESSED_BUCKET_DIRECTORY: ${env:PROCESSED_BUCKET_DIRECTORY}
     
 
 constructs:
@@ -48,7 +50,7 @@ functions:
           bucket: ${construct:SourcesBucket.bucketName}
           event: s3:ObjectCreated:*
           rules:
-            - prefix: raw/
+            - prefix: ${env:RAW_BUCKET_DIRECTORY}/
             - suffix: .html
           existing: true
   testEmbeddings:

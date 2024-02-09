@@ -3,7 +3,7 @@ from boto3 import client
 import os
 
 
-class BucketClient:
+class SourcesBucket:
     def __init__(self):
         self.bucket_name = os.environ.get("SOURCES_BUCKET_NAME")
         self.client = client("s3")
@@ -25,4 +25,16 @@ class BucketClient:
             )
         except Exception as e:
             self.logger.error(f"Error retrieving bucket item: {e}")
+            raise e
+
+    def store_bucket_item(self, key: str, content: bytes, source_url: str = ""):
+        try:
+            self.client.put_object(
+                Body=content,
+                Bucket=self.bucket_name,
+                Key=key,
+                Metadata={"source": source_url},
+            )
+        except Exception as e:
+            self.logger.error(f"Error storing item in bucket: {e}")
             raise e

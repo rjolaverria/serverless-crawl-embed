@@ -1,22 +1,17 @@
-import json
 import logging
-import os
-from boto3 import client
+
+from .utils.sqs import EmbeddingsQueue
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-SQS_QUEUE_URL = os.environ.get("EMBEDDINGS_QUEUE_URL")
-sqs = client("sqs")
-
-
 def run(event, context):
     if event:
         try:
+            queue = EmbeddingsQueue()
             for record in event["Records"]:
-                sqs.send_message(
-                    QueueUrl=SQS_QUEUE_URL,
-                    MessageBody=json.dumps(record["s3"]["object"]),
+                queue.send_message(
+                    message=record["s3"]["object"],
                 )
         except Exception as e:
             logger.error("An error occurred")

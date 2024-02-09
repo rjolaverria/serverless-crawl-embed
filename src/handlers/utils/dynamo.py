@@ -26,7 +26,7 @@ class CrawlTable:
                     "PK": domain,
                     "SK": link,
                     "createdAt": now,
-                    "updatedAt": now,
+                    "updated_at": now,
                 },
             )
 
@@ -57,9 +57,9 @@ class CrawlTable:
             now = datetime.utcnow().isoformat()
             self.table.update_item(
                 Key={"PK": domain, "SK": link},
-                UpdateExpression="SET updatedAt = :updatedAt",
+                UpdateExpression="SET updated_at = :updated_at",
                 ExpressionAttributeValues={
-                    ":updatedAt": now,
+                    ":updated_at": now,
                 },
             )
         except ClientError as err:
