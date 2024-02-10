@@ -50,7 +50,7 @@ def get_text_from_html(body: str):
     try:
         soup = BeautifulSoup(body, "html.parser")
         text = [p.get_text() for p in soup.find_all("p")]
-        text = ". ".join(text)
+        text = " ".join(text)
         return remove_newlines(text)
     except Exception as e:
         logger.error("An error occurred extracting text from HTML:", e)

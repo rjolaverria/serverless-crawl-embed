@@ -40,8 +40,8 @@ def crawl(url: str, job_time: str):
         bucket.store_bucket_item(file_path, response.text, url)
         logger.info("Done saving raw page")
         # Get the hyperlinks from the URL and add them to the queue
-        links = get_domain_hyperlinks(local_domain, url, response)
-        mark_and_enqueue_links(local_domain, links, job_time)
+        # links = get_domain_hyperlinks(local_domain, url, response)
+        # mark_and_enqueue_links(local_domain, links, job_time)
 
 
 def run(event, context):
