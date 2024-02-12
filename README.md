@@ -18,6 +18,8 @@ This was generated using the Serverless Framework AWS Python template.
 
 This is an example of a way to crawl, generate and store embeddings static websites in using an S3 bucket, Lambdas, SQS, DynamoDB, Pinecone(Serverless) and OpenAI(text-embedding-ada-002).
 
+**Note:** AWS will terminate the execution of the CrawlQueueWorker  because they will detect recursive loops with Lambda. This is because of the CrawlQueueWorker(crawl) Lambda is also writing to the same SQS queue that it is polling from. This is mitigated by using the DynamoDB table to track the URLs that have been queued but AWS has no way  of knowing this. I will be updating this in  the near future to use AWS Fargate to crawl and push the urls to be sccraped to the SQS queue.
+
 ## Plugins
 - serverless-python-requirements
 - serverless-lift
